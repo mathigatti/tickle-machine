@@ -1,0 +1,22 @@
+
+
+x-en  38
+x-step a0
+x-dir a1
+
+
+y-en a2
+y-step a6
+y-dir a7
+
+z-en a8
+z-step 46
+z-dir 48
+
+e0-en 24
+e0-step 26
+e0-dir 28
+
+e1-en 30
+e1 - dir 34
+e1-step 36
