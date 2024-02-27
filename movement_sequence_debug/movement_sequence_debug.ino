@@ -9,9 +9,9 @@
 #define X_ENABLE_PIN 38
 
 // Global variables
-double x_total_cm = 0;//47;
-double largo_motor_1 = x_total_cm / 2;
-double largo_motor_2 = x_total_cm / 2;
+double x_total_cm = 47;
+double largo_hilo_1 = x_total_cm / 2;
+double largo_hilo_2 = x_total_cm / 2;
 double diametro_cm = 5;
 double perimetro = PI * diametro_cm;
 int steps_por_vuelta = 6400;
@@ -21,29 +21,32 @@ struct Vector {
   double x;
   double y;
 };
-Vector posiciones[] = {{ 0., 0.}, {5., 0.}
-, {10, 0}, {15, 0},  { 20., 0.}, {15., 0.}, {10, 0}, {5, 0}
+
+Vector posiciones[] = {{ 23.5, 23.5}, {0.0, 0.0}, {23.5, 0}
 };
+
 int lenVector = sizeof(posiciones) / sizeof(posiciones[0]);
 int idx = 0;
 
 void update_steps(double x, double y, int *steps_motor_1, int *steps_motor_2) {
-  double largo_motor_1_viejo = largo_motor_1;
-  double largo_motor_2_viejo = largo_motor_2;
+  double largo_hilo_1_viejo = largo_hilo_1;
+  double largo_hilo_2_viejo = largo_hilo_2;
 
-  largo_motor_1 = sqrt(pow(x, 2) + pow(y, 2));
-  largo_motor_2 = sqrt(pow(x_total_cm - x, 2) + pow(y, 2));
+  largo_hilo_1 = sqrt(pow(x_total_cm - x, 2) + pow(y, 2));
+  largo_hilo_2 = sqrt(pow(x, 2) + pow(y, 2));
 
-  double diferencia_motor_1 = largo_motor_1 - largo_motor_1_viejo;
-  double diferencia_motor_2 = largo_motor_2 - largo_motor_2_viejo;
+  double diferencia_motor_1 = largo_hilo_1 - largo_hilo_1_viejo;
+  double diferencia_motor_2 = largo_hilo_2 - largo_hilo_2_viejo;
 
   *steps_motor_1 = int(cm_a_steps * diferencia_motor_1);
   *steps_motor_2 = int(cm_a_steps * diferencia_motor_2);
 
-  printear("largo_motor_2_viejo", largo_motor_2_viejo);
-  printear("largo_motor_2", largo_motor_2);
+  printear("largo_hilo_2_viejo", largo_hilo_2_viejo);
+  printear("largo_hilo_2", largo_hilo_2);
   printear("diferencia_motor_2", diferencia_motor_2);
-
+  printear("largo_hilo_1_viejo", largo_hilo_1_viejo);
+  printear("largo_hilo_1", largo_hilo_1);
+  printear("diferencia_motor_1", diferencia_motor_1);
 
 }
 
@@ -88,15 +91,14 @@ void setup() {
   motorX.setSpeed(speed);
   motorX.setAcceleration(speed * 4);
 
-
 }
 
 void loop() {
   int max_position = steps * microsteps * vueltas;
-  // motorY.run();
+  motorY.run();
   motorX.run();
-  //if (motorY.distanceToGo() == 0 &&
-  if (motorX.distanceToGo() == 0) {
+
+  if (motorY.distanceToGo() == 0 && motorX.distanceToGo() == 0) {
     printear("-----------------------");
     printear("currentPosition", motorX.currentPosition());
 
@@ -107,13 +109,13 @@ void loop() {
       idx = 0;
     }
     x_i = posiciones[idx].x;
-    //  y_i = posiciones[idx].y;
+    y_i = posiciones[idx].y;
     printear("posX destino", x_i);
     update_steps(x_i, y_i, &steps_m1, &steps_m2);
 
-    //motorY.move(steps_m1);
-//    motorX.moveTo(motorX.currentPosition() + steps_m2 );
-    motorX.move(steps_m2 );
+    motorY.move(-steps_m1);
+    motorX.move(steps_m2);
+    printear("steps_m1", steps_m1);
     printear("steps_m2", steps_m2);
 
     printear("-----------------------");
