@@ -9,7 +9,7 @@
 #define X_ENABLE_PIN 38
 
 // Global variables
-double x_total_cm = 47;
+double x_total_cm = 0;//47;
 double largo_motor_1 = x_total_cm / 2;
 double largo_motor_2 = x_total_cm / 2;
 double diametro_cm = 5;
@@ -21,8 +21,10 @@ struct Vector {
   double x;
   double y;
 };
-Vector posiciones[]={{10.,10.},{10.,20.},{20,20},{20,10}};
-int lenVector = sizeof(posiciones)/sizeof(posiciones[0]);
+Vector posiciones[] = {{ 0., 0.}, {5., 0.}
+, {10, 0}, {15, 0},  { 20., 0.}, {15., 0.}, {10, 0}, {5, 0}
+};
+int lenVector = sizeof(posiciones) / sizeof(posiciones[0]);
 int idx = 0;
 
 void update_steps(double x, double y, int *steps_motor_1, int *steps_motor_2) {
@@ -37,6 +39,12 @@ void update_steps(double x, double y, int *steps_motor_1, int *steps_motor_2) {
 
   *steps_motor_1 = int(cm_a_steps * diferencia_motor_1);
   *steps_motor_2 = int(cm_a_steps * diferencia_motor_2);
+
+  printear("largo_motor_2_viejo", largo_motor_2_viejo);
+  printear("largo_motor_2", largo_motor_2);
+  printear("diferencia_motor_2", diferencia_motor_2);
+
+
 }
 
 int x_i;
@@ -85,23 +93,32 @@ void setup() {
 
 void loop() {
   int max_position = steps * microsteps * vueltas;
-  motorY.run();
+  // motorY.run();
   motorX.run();
+  //if (motorY.distanceToGo() == 0 &&
+  if (motorX.distanceToGo() == 0) {
+    printear("-----------------------");
+    printear("currentPosition", motorX.currentPosition());
 
-  if (motorY.distanceToGo() == 0 && motorX.distanceToGo() == 0) {
+    printear("cambio objetivo");
+
     idx++;
-    if(idx == lenVector){
+    if (idx == lenVector) {
       idx = 0;
     }
     x_i = posiciones[idx].x;
-    y_i = posiciones[idx].y;
-
+    //  y_i = posiciones[idx].y;
+    printear("posX destino", x_i);
     update_steps(x_i, y_i, &steps_m1, &steps_m2);
 
-    motorY.moveTo(steps_m1);
-    motorX.moveTo(steps_m2);
+    //motorY.move(steps_m1);
+//    motorX.moveTo(motorX.currentPosition() + steps_m2 );
+    motorX.move(steps_m2 );
+    printear("steps_m2", steps_m2);
 
-    delay(4000);
+    printear("-----------------------");
+
+    delay(2000);
 
   }
 
