@@ -16,6 +16,9 @@
 #define Y_MIN 18
 #define Z_MIN 14
 
+#define DIRECCION = -1
+
+
 // Global variables
 double x_total_cm = 20;
 double z_total_cm = 19;
@@ -74,6 +77,8 @@ void printear(String s, long val) {
 void printear(String s) {
   Serial.println(s);
 }
+
+
 
 void calibrar_motores(AccelStepper motorX, AccelStepper motorY, AccelStepper motorZ, int *steps_motor_1, int *steps_motor_2, int *steps_motor_3) {
   /* ESTE CODIGO ASUME QUE EL MOTOR X TIENE HILO DE SOBRE SIEMPRE */
@@ -144,7 +149,6 @@ void calibrar_motores(AccelStepper motorX, AccelStepper motorY, AccelStepper mot
 }
 
 
-
 void update_steps(double x, double y, double z, int *steps_motor_1, int *steps_motor_2, int *steps_motor_3) {
   double largo_motor_1_viejo = largo_motor_1;
   double largo_motor_2_viejo = largo_motor_2;
@@ -206,6 +210,12 @@ void setup() {
 
   pinMode(ledPin, OUTPUT);
 
+  // Deshabilitar/habilitar motores
+  /*
+  pinWrite(Z_ENABLE_PIN, 0);
+  pinWrite(Y_ENABLE_PIN, 0);
+  pinWrite(X_ENABLE_PIN, 0);
+*/
   int speed = int(steps * microsteps);
   motorY.setMaxSpeed(speed * 2);
   motorY.setSpeed(speed);
