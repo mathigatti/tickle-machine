@@ -41,8 +41,36 @@ def valor(i):
 
     max_v = 100
     base = 0
-    return (x, abs(math.sin(i))*max_v+base, z)
+    n = 3
+    return (x, abs(math.sin(math.pi*(i%n)/n))*max_v+base, z)
 
+x_max=100
+y_max=220
+z_max=200
+
+def valid_coords(coord, ):
+    x,y,z = coord
+    # Function to calculate the area of a triangle given its vertices
+    def triangle_area(x1, z1, x2, z2, x3, z3):
+        return abs((x1 * (z2 - z3) + x2 * (z3 - z1) + x3 * (z1 - z2)) / 2.0)
+
+    # Vertices of the triangle
+    x1, z1 = 0, 0
+    x2, z2 = x_max, 0
+    x3, z3 = x_max / 2, z_max
+
+    # Total area of the triangle
+    total_area = triangle_area(x1, z1, x2, z2, x3, z3)
+
+    # Areas of triangles formed with the point (x, z)
+    area1 = triangle_area(x, z, x2, z2, x3, z3)
+    area2 = triangle_area(x1, z1, x, z, x3, z3)
+    area3 = triangle_area(x1, z1, x2, z2, x, z)
+
+    # Check if the sum of the areas matches the total area
+    return total_area == (area1 + area2 + area3) and 0 <= y <= y_max
+
+valid_coords(0.,0.,0.)
 # Start the read thread
 read_thread = threading.Thread(target=read_from_arduino)
 read_thread.daemon = True
@@ -64,8 +92,9 @@ def on_press(key):
             for i in range(100):
                 coord = valor(i)
                 #print(text)
-                send_to_arduino(str(coord).replace(" ", ""))
-                sleep(0.5)
+                if valid_coords(coord):
+                    send_to_arduino(str(coord).replace(" ", ""))
+                    sleep(0.5)
             
         if key.char in {'q', 'a', 'w', 's', 'e', 'd', 'y', 'h', 'u', 'j', 'i', 'k', 'm', 'n', 'b', 'c','v'}:
             send_to_arduino(key.char.upper())  # Send the command in uppercase
