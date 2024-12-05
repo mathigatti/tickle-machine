@@ -21,7 +21,6 @@ double perimetro = PI * diametro_cm;
 int steps_por_vuelta = 6400;
 double cm_a_steps = steps_por_vuelta / perimetro;
 
-
 AccelStepper motorX(1, X_STEP_PIN, X_DIR_PIN);
 AccelStepper motorY(1, Y_STEP_PIN, Y_DIR_PIN);
 AccelStepper motorZ(1, Z_STEP_PIN, Z_DIR_PIN);
@@ -40,28 +39,46 @@ double x_total_cm = 100;
 double z_total_cm = 200;
 double y_total_cm = 220;
 
-double current_x = x_total_cm/2;
+double current_x = x_total_cm / 2.;
 double current_y = 0;
-double current_z = z_total_cm/3;
+double current_z = z_total_cm * 2. / 5.;
 
 // Valores de inicio
-double largo_motor_1 = 83.33;
-double largo_motor_2 = 83.33;
-double largo_motor_3 = 133.33;
+double largo_motor_1 = 94.33;
+double largo_motor_2 = 94.33;
+double largo_motor_3 = 120.;
+
+// Struct for 3D coordinates
+struct Coordinate3D {
+  double x;
+  double y;
+  double z;
+};
+
+void debug() {
+  Serial.println("Largo_motor");
+  Serial.println(largo_motor_1);
+  Serial.println(largo_motor_2);
+  Serial.println(largo_motor_3);
+
+  Serial.println("Current");
+  Serial.println(current_x);
+  Serial.println(current_y);
+  Serial.println(current_z);
+}
+
+void update_steps(Coordinate3D coord) {
+ update_steps(coord.x, coord.y, coord.z);
+}
 
 void update_steps(double x, double y, double z) {
   double largo_motor_1_viejo = largo_motor_1;
   double largo_motor_2_viejo = largo_motor_2;
   double largo_motor_3_viejo = largo_motor_3;
 
-  Serial.println("Largo_motor");
-  Serial.println(largo_motor_1);
-  Serial.println(largo_motor_2);
-  Serial.println(largo_motor_3);
-
   largo_motor_1 = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
   largo_motor_2 = sqrt(pow(x_total_cm - x, 2) + pow(y, 2) + pow(z, 2));
-  largo_motor_3 = sqrt(pow(x_total_cm/2 - x, 2) + pow(y, 2) + pow(z_total_cm - z, 2));
+  largo_motor_3 = sqrt(pow(x_total_cm / 2 - x, 2) + pow(y, 2) + pow(z_total_cm - z, 2));
 
   double diferencia_motor_1 = largo_motor_1 - largo_motor_1_viejo;
   double diferencia_motor_2 = largo_motor_2 - largo_motor_2_viejo;
@@ -78,30 +95,61 @@ void update_steps(double x, double y, double z) {
   current_x = x;
   current_y = y;
   current_z = z;
-
 }
 
 double movement_length = 10.;
 
 void handle_serial_command(char command) {
+  debug();
   switch (command) {
+    case 'V': // Setea cero de coordenadas
+      current_x = x_total_cm / 2.;
+      current_y = 0;
+      current_z = z_total_cm * 2. / 5.;
+      largo_motor_1 = 94.33;
+      largo_motor_2 = 94.33;
+      largo_motor_3 = 120.;
+      break;
+    case 'B': // Va al cero de coordenadas
+      current_x = x_total_cm / 2.;
+      current_y = 0;
+      current_z = z_total_cm * 2. / 5.;
+      update_steps(current_x, current_y, current_z);
+      break;
+    case 'C': // Falopa
+      current_x = 10.;
+      current_y = 10.;
+      current_z = 10.;
+      update_steps(current_x, current_y, current_z);
+      debug();
+      break;
+    case 'N': // Moverse mas
+      movement_length += 1;
+      if (movement_length > 100)
+        movement_length = 100;
+      break;
+    case 'M': // Moverse menos
+      movement_length -= 1;
+      if (movement_length < 1)
+        movement_length = 1;
+      break;
     case 'Y': // Motor X Up
-      motorX.move(cm_a_steps*1);
+      motorX.move(cm_a_steps * -movement_length);
       break;
     case 'H': // Motor X Down
-      motorX.move(cm_a_steps*-1);
+      motorX.move(cm_a_steps * movement_length);
       break;
     case 'U': // Motor Y Up
-      motorY.move(cm_a_steps*1);
+      motorY.move(cm_a_steps * -movement_length);
       break;
     case 'J': // Motor Y Down
-      motorY.move(cm_a_steps*-1);
+      motorY.move(cm_a_steps * movement_length);
       break;
     case 'I': // Motor Z Up
-      motorZ.move(cm_a_steps*1);
+      motorZ.move(cm_a_steps * -movement_length);
       break;
     case 'K': // Motor Z Down
-      motorZ.move(cm_a_steps*-1);
+      motorZ.move(cm_a_steps * movement_length);
       break;
 
     case 'Q': // Up
@@ -125,10 +173,10 @@ void handle_serial_command(char command) {
     default:
       Serial.println("Invalid command");
   }
+  debug();
 }
 
 void setup() {
-
   Serial.begin(9600);
   Serial.println("Starting StepperTest");
   digitalWrite(ledPin, LOW);
@@ -151,7 +199,7 @@ void setup() {
 
   pinMode(ledPin, OUTPUT);
 
-  int speed = int(steps * microsteps * 2);
+  int speed = int(steps * microsteps * 20);
   motorY.setMaxSpeed(speed * 2);
   motorY.setSpeed(speed);
   motorY.setAcceleration(speed * 4);
@@ -163,7 +211,36 @@ void setup() {
   motorZ.setMaxSpeed(speed * 2);
   motorZ.setSpeed(speed);
   motorZ.setAcceleration(speed * 4);
+}
 
+Coordinate3D parse_coordinates(String message) {
+  // Assuming message is in the format "x,y,z"
+  Coordinate3D coord;
+  int firstCommaIndex = message.indexOf(',');
+  int secondCommaIndex = message.indexOf(',', firstCommaIndex + 1);
+
+  if (firstCommaIndex == -1 || secondCommaIndex == -1) {
+    Serial.println("Invalid coordinate format");
+    return;
+  }
+
+  String xString = message.substring(0, firstCommaIndex);
+  String yString = message.substring(firstCommaIndex + 1, secondCommaIndex);
+  String zString = message.substring(secondCommaIndex + 1);
+
+  coord.x = xString.toFloat();
+  coord.y = yString.toFloat();
+  coord.z = zString.toFloat();
+
+  // Now print the coordinates
+  Serial.print("Parsed coordinates: (");
+  Serial.print(coord.x);
+  Serial.print(", ");
+  Serial.print(coord.y);
+  Serial.print(", ");
+  Serial.print(coord.z);
+  Serial.println(")");
+  return coord;
 }
 
 void loop() {
@@ -171,9 +248,39 @@ void loop() {
   motorY.run();
   motorZ.run();
 
-
-  if (Serial.available()) {
+  while (Serial.available()) {
     char command = Serial.read();
-    handle_serial_command(command);
+    if (command == '(') {
+      // Start reading the message
+      String message = "";
+      unsigned long startTime = millis(); // Get the current time
+      const unsigned long timeout = 1000; // Timeout duration in milliseconds (1 second)
+
+      while (true) {
+        // Check for timeout
+        if (millis() - startTime > timeout) {
+          Serial.println("Timeout while reading message");
+          break; // Exit the loop if timeout occurs
+        }
+        // Wait until data is available
+        if (Serial.available()) {
+          char c = Serial.read();
+          if (c == ')') {
+            // End of message
+            break;
+          }
+          message += c;
+        }
+      }
+      // Now print the full message
+      Serial.println("Received message: " + message);
+
+      // Parse the coordinates
+      Coordinate3D coord = parse_coordinates(message);
+      update_steps(coord);
+
+    } else {
+      handle_serial_command(command);
+    }
   }
 }
