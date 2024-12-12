@@ -1,5 +1,5 @@
-import math
 import serial
+import random
 import threading
 from time import sleep
 from pynput import keyboard
@@ -7,6 +7,10 @@ from pynput import keyboard
 # Configure the serial connection
 arduino_port = "/dev/ttyUSB0"  # Replace with your Arduino's serial port
 baud_rate = 9600       # Must match the baud rate in the Arduino sketch
+
+X_TOTAL_CM=180
+Y_TOTAL_CM=280
+Z_TOTAL_CM=230
 
 # Create a serial connection
 try:
@@ -28,27 +32,16 @@ def read_from_arduino():
             print(f"Error reading from Arduino: {e}")
             break
 
+def random_point(x_min, x_max, y, z_min, z_max):
+    granularity = 100
+    x = random.randint(0,granularity)/granularity
+    z = random.randint(0,granularity)/granularity
+    
+    x = x*(x_max-x_min)+x_min
+    z = z*(z_max-z_min)+z_min
+    return str((float(round(x)), float(y), float(round(z))))
 
-
-def valor(i):
-    x_total_cm = 100
-    z_total_cm = 200
-    y_total_cm = 220
-
-    x = x_total_cm/2
-    y = 0
-    z = z_total_cm*2/5
-
-    max_v = 100
-    base = 0
-    n = 3
-    return (x, abs(math.sin(math.pi*(i%n)/n))*max_v+base, z)
-
-x_max=100
-y_max=220
-z_max=200
-
-def valid_coords(coord, ):
+def valid_coords(coord):
     x,y,z = coord
     # Function to calculate the area of a triangle given its vertices
     def triangle_area(x1, z1, x2, z2, x3, z3):
@@ -56,8 +49,8 @@ def valid_coords(coord, ):
 
     # Vertices of the triangle
     x1, z1 = 0, 0
-    x2, z2 = x_max, 0
-    x3, z3 = x_max / 2, z_max
+    x2, z2 = X_TOTAL_CM, 0
+    x3, z3 = X_TOTAL_CM / 2, Z_TOTAL_CM
 
     # Total area of the triangle
     total_area = triangle_area(x1, z1, x2, z2, x3, z3)
@@ -68,9 +61,8 @@ def valid_coords(coord, ):
     area3 = triangle_area(x1, z1, x2, z2, x, z)
 
     # Check if the sum of the areas matches the total area
-    return total_area == (area1 + area2 + area3) and 0 <= y <= y_max
+    return total_area == (area1 + area2 + area3) and 0 <= y <= Y_TOTAL_CM
 
-valid_coords(0.,0.,0.)
 # Start the read thread
 read_thread = threading.Thread(target=read_from_arduino)
 read_thread.daemon = True
@@ -88,15 +80,26 @@ def send_to_arduino(message):
 def on_press(key):
     try:
         if key.char == "1":
-            #text = input()
-            for i in range(100):
-                coord = valor(i)
-                #print(text)
-                if valid_coords(coord):
-                    send_to_arduino(str(coord).replace(" ", ""))
-                    sleep(0.5)
-            
-        if key.char in {'q', 'a', 'w', 's', 'e', 'd', 'y', 'h', 'u', 'j', 'i', 'k', 'm', 'n', 'b', 'c','v'}:
+            with open("coords.txt", 'r') as f:
+                coords = f.read().split(" ")
+            for coord in coords:
+                send_to_arduino(str(coord).replace(" ", ""))
+                sleep(7)
+        if key.char == "2":
+            for _ in range(4):
+                center = (90,210,80)
+                coord = random_point(center[0]-10,center[0]+10,center[1]+20,center[2]-10,center[2]+80)
+                
+                send_to_arduino(str(coord))
+                sleep(7)
+
+                send_to_arduino(str(center))
+                sleep(7)
+
+
+        if key.char in {'f','r','z','q', 'a', 'w', 's', 'e', 'd', 'y', 'h', 'u', 'j', 'i', 'k', 'm', 'n', 'b', 'c','v'}:
+            if key.char.upper() == "Z":
+                raise Exception("Bye! :)")
             send_to_arduino(key.char.upper())  # Send the command in uppercase
     except AttributeError:
         # Handle special keys (non-character keys)

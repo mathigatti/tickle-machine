@@ -35,18 +35,18 @@ int steps = 200;
 int microsteps = 32;
 
 // Global variables
-double x_total_cm = 100;
-double z_total_cm = 200;
-double y_total_cm = 220;
+double x_total_cm = 180;
+double z_total_cm = 230;
+double y_total_cm = 280;
 
 double current_x = x_total_cm / 2.;
 double current_y = 0;
-double current_z = z_total_cm * 2. / 5.;
+double current_z = 80;
 
 // Valores de inicio
-double largo_motor_1 = 94.33;
-double largo_motor_2 = 94.33;
-double largo_motor_3 = 120.;
+double largo_motor_1 = 120.4;
+double largo_motor_2 = 120.4;
+double largo_motor_3 = 150.0;
 
 // Struct for 3D coordinates
 struct Coordinate3D {
@@ -61,7 +61,7 @@ void debug() {
   Serial.println(largo_motor_2);
   Serial.println(largo_motor_3);
 
-  Serial.println("Current");
+  Serial.println("Current coords");
   Serial.println(current_x);
   Serial.println(current_y);
   Serial.println(current_z);
@@ -105,23 +105,24 @@ void handle_serial_command(char command) {
     case 'V': // Setea cero de coordenadas
       current_x = x_total_cm / 2.;
       current_y = 0;
-      current_z = z_total_cm * 2. / 5.;
-      largo_motor_1 = 94.33;
-      largo_motor_2 = 94.33;
-      largo_motor_3 = 120.;
+      current_z = 80.0;
+      largo_motor_1 = 120.4;
+      largo_motor_2 = 120.4;
+      largo_motor_3 = 150.;
       break;
     case 'B': // Va al cero de coordenadas
       current_x = x_total_cm / 2.;
       current_y = 0;
-      current_z = z_total_cm * 2. / 5.;
+      current_z = 80.0;
       update_steps(current_x, current_y, current_z);
       break;
     case 'C': // Falopa
-      current_x = 10.;
-      current_y = 10.;
-      current_z = 10.;
-      update_steps(current_x, current_y, current_z);
-      debug();
+      current_x = x_total_cm / 2.;
+      current_y = 210;
+      current_z = 80.0;
+      largo_motor_1 = 242.0;
+      largo_motor_2 = 242.0;
+      largo_motor_3 = 258.0;
       break;
     case 'N': // Moverse mas
       movement_length += 1;
@@ -152,22 +153,22 @@ void handle_serial_command(char command) {
       motorZ.move(cm_a_steps * movement_length);
       break;
 
-    case 'Q': // Up
+    case 'A': // Left
       update_steps(current_x, current_y, current_z + movement_length);
       break;
-    case 'A': // Down
+    case 'D': // Right
       update_steps(current_x, current_y, current_z - movement_length);
       break;
-    case 'W': // Front
-      update_steps(current_x, current_y + movement_length, current_z);
-      break;
-    case 'S': // Back
+    case 'W': // Up
       update_steps(current_x, current_y - movement_length, current_z);
       break;
-    case 'E': // Right
+    case 'S': // Down
+      update_steps(current_x, current_y + movement_length, current_z);
+      break;
+    case 'R': // Front
       update_steps(current_x + movement_length, current_y, current_z);
       break;
-    case 'D': // Left
+    case 'F': // Back
       update_steps(current_x - movement_length, current_y, current_z);
       break;
     default:
@@ -200,6 +201,8 @@ void setup() {
   pinMode(ledPin, OUTPUT);
 
   int speed = int(steps * microsteps * 20);
+  //speed = 30000;
+  
   motorY.setMaxSpeed(speed * 2);
   motorY.setSpeed(speed);
   motorY.setAcceleration(speed * 4);
@@ -211,6 +214,8 @@ void setup() {
   motorZ.setMaxSpeed(speed * 2);
   motorZ.setSpeed(speed);
   motorZ.setAcceleration(speed * 4);
+
+
 }
 
 Coordinate3D parse_coordinates(String message) {
@@ -221,7 +226,7 @@ Coordinate3D parse_coordinates(String message) {
 
   if (firstCommaIndex == -1 || secondCommaIndex == -1) {
     Serial.println("Invalid coordinate format");
-    return;
+    return coord;
   }
 
   String xString = message.substring(0, firstCommaIndex);
