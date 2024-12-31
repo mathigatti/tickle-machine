@@ -86,15 +86,32 @@ def on_press(key):
                 send_to_arduino(str(coord).replace(" ", ""))
                 sleep(7)
         if key.char == "2":
-            for _ in range(4):
+            for _ in range(12):
                 center = (90,210,80)
-                coord = random_point(center[0]-10,center[0]+10,center[1]+20,center[2]-10,center[2]+80)
+                coord = random_point(center[0]-30,center[0]+30,center[1]+30,center[2]-70,center[2]+40)
                 
                 send_to_arduino(str(coord))
                 sleep(7)
 
                 send_to_arduino(str(center))
                 sleep(7)
+
+        if key.char == "3":
+            for _ in range(8):
+                center = (90,210,80)
+                coord = random_point(center[0]-30,center[0]+30,center[1]+30,center[2]-70,center[2]+40)
+                
+                send_to_arduino(str(coord))
+                sleep(4)
+
+
+        if key.char == "4":
+            for _ in range(4):
+                x, y, z = (90,210,80) 
+                d = 100               
+                for coord in [(x - d, y, z), (x, y, z-d), (x + d, y, z), (x, y, z+d)]:
+                    send_to_arduino(str(coord))
+                    sleep(4)
 
 
         if key.char in {'f','r','z','q', 'a', 'w', 's', 'e', 'd', 'y', 'h', 'u', 'j', 'i', 'k', 'm', 'n', 'b', 'c','v'}:
