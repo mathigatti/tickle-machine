@@ -34,20 +34,6 @@ int vueltas = 4;
 int steps = 200;
 int microsteps = 32;
 
-// Global variables
-double x_total_cm = 180;
-double z_total_cm = 230;
-double y_total_cm = 280;
-
-double current_x = x_total_cm / 2.;
-double current_y = 0;
-double current_z = 80;
-
-// Valores de inicio
-double largo_motor_1 = 120.4;
-double largo_motor_2 = 120.4;
-double largo_motor_3 = 150.0;
-
 // Struct for 3D coordinates
 struct Coordinate3D {
   double x;
@@ -55,75 +41,10 @@ struct Coordinate3D {
   double z;
 };
 
-void debug() {
-  Serial.println("Largo_motor");
-  Serial.println(largo_motor_1);
-  Serial.println(largo_motor_2);
-  Serial.println(largo_motor_3);
-
-  Serial.println("Current coords");
-  Serial.println(current_x);
-  Serial.println(current_y);
-  Serial.println(current_z);
-}
-
-void update_steps(Coordinate3D coord) {
- update_steps(coord.x, coord.y, coord.z);
-}
-
-void update_steps(double x, double y, double z) {
-  double largo_motor_1_viejo = largo_motor_1;
-  double largo_motor_2_viejo = largo_motor_2;
-  double largo_motor_3_viejo = largo_motor_3;
-
-  largo_motor_1 = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
-  largo_motor_2 = sqrt(pow(x_total_cm - x, 2) + pow(y, 2) + pow(z, 2));
-  largo_motor_3 = sqrt(pow(x_total_cm / 2 - x, 2) + pow(y, 2) + pow(z_total_cm - z, 2));
-
-  double diferencia_motor_1 = largo_motor_1 - largo_motor_1_viejo;
-  double diferencia_motor_2 = largo_motor_2 - largo_motor_2_viejo;
-  double diferencia_motor_3 = largo_motor_3 - largo_motor_3_viejo;
-
-  int steps_motor_1 = int(cm_a_steps * diferencia_motor_1);
-  int steps_motor_2 = int(cm_a_steps * diferencia_motor_2);
-  int steps_motor_3 = int(cm_a_steps * diferencia_motor_3);
-
-  motorZ.move(steps_motor_1);
-  motorY.move(steps_motor_2);
-  motorX.move(steps_motor_3);
-
-  current_x = x;
-  current_y = y;
-  current_z = z;
-}
-
 double movement_length = 10.;
 
 void handle_serial_command(char command) {
-  debug();
   switch (command) {
-    case 'V': // Setea cero de coordenadas
-      current_x = x_total_cm / 2.;
-      current_y = 0;
-      current_z = 80.0;
-      largo_motor_1 = 120.4;
-      largo_motor_2 = 120.4;
-      largo_motor_3 = 150.;
-      break;
-    case 'B': // Va al cero de coordenadas
-      current_x = x_total_cm / 2.;
-      current_y = 0;
-      current_z = 80.0;
-      update_steps(current_x, current_y, current_z);
-      break;
-    case 'C': // Falopa
-      current_x = x_total_cm / 2.;
-      current_y = 210;
-      current_z = 80.0;
-      largo_motor_1 = 242.0;
-      largo_motor_2 = 242.0;
-      largo_motor_3 = 258.0;
-      break;
     case 'N': // Moverse mas
       movement_length += 1;
       if (movement_length > 100)
@@ -152,29 +73,9 @@ void handle_serial_command(char command) {
     case 'K': // Motor Z Down
       motorZ.move(cm_a_steps * movement_length);
       break;
-
-    case 'A': // Left
-      update_steps(current_x, current_y, current_z + movement_length);
-      break;
-    case 'D': // Right
-      update_steps(current_x, current_y, current_z - movement_length);
-      break;
-    case 'W': // Up
-      update_steps(current_x, current_y - movement_length, current_z);
-      break;
-    case 'S': // Down
-      update_steps(current_x, current_y + movement_length, current_z);
-      break;
-    case 'R': // Front
-      update_steps(current_x + movement_length, current_y, current_z);
-      break;
-    case 'F': // Back
-      update_steps(current_x - movement_length, current_y, current_z);
-      break;
     default:
-      Serial.println("Invalid command");
+      break;
   }
-  debug();
 }
 
 void setup() {
@@ -282,7 +183,10 @@ void loop() {
 
       // Parse the coordinates
       Coordinate3D coord = parse_coordinates(message);
-      update_steps(coord);
+      motorX.move(cm_a_steps * coord.x);
+      motorY.move(cm_a_steps * coord.y);
+      motorZ.move(cm_a_steps * coord.z);
+
 
     } else {
       handle_serial_command(command);
