@@ -17,7 +17,12 @@ def coord_ready():
     with open("coords.txt", "r") as f:
         return len(f.read()) == 0
 
-def move(area, position, target_area=2500, target_position=(250, 250), step = 2.):
+# Tolerances (tweak to your needs).
+area_tolerance = 500
+pos_tolerance = 20
+
+
+def move(area, position, target_area=2500, target_position=(250, 250), step = 5.):
     """
     Moves the object closer to 'target_position' in the image plane and
     adjusts its distance (via its observed 'area') to approach 'target_area'.
@@ -28,9 +33,6 @@ def move(area, position, target_area=2500, target_position=(250, 250), step = 2.
     Positive means giving rope; negative means taking rope.
     """
 
-    # Tolerances (tweak to your needs).
-    area_tolerance = 500
-    pos_tolerance = 20
 
     # Default "no move" instruction
     tip_move = 0.
@@ -134,8 +136,9 @@ if __name__ == "__main__":
         # Convert the tuple to a string like (-5.0, 0.0, 5.0)
         f.write("")
 
-    target_position = (239, 222)
-    target_area = 1500
+    positions = [(239, 222, 1200), (300, 222, 2000), (300, 180, 1200), (239, 180, 2000)]
+    i = 0
+    target_position = positions[0]
 
     show = False
 
@@ -153,16 +156,18 @@ if __name__ == "__main__":
             area = data["area"]
             position = data["position"]
 
-            print(area, position)
-            print(target_area, target_position)
-            if (abs(area - target_area) < 100 
-                and abs(target_position[0] - position[0]) < 10 
-                and abs(target_position[1] - position[1]) < 10):
-                print("Target reached. Stopping.")
-                break
+            print("target:", position + (area,))
+            print("status:", target_position)
+            print("\n")
+            if (abs(area - target_position[-1]) < area_tolerance 
+                and abs(target_position[0] - position[0]) < pos_tolerance 
+                and abs(target_position[1] - position[1]) < pos_tolerance):
+                print("Target reached!")
+                i+=1
+                target_position = positions[i%len(positions)]
 
             # Otherwise, keep moving
-            move(area, position, target_area, target_position)
+            move(area, position, target_position[-1], target_position[:2])
         else:
             sleep(1)
 
