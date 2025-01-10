@@ -18,11 +18,23 @@ def coord_ready():
         return len(f.read()) == 0
 
 # Tolerances (tweak to your needs).
-area_tolerance = 500
+area_tolerance = 200
 pos_tolerance = 20
 
+def dynamic_step(error, min_step=1.0, max_step=50.0, factor=0.1):
+    """
+    Given some 'error' (distance from target in pixels, or difference in area),
+    we scale that error by 'factor' to get a step value. 
+    
+    We then clamp that step between 'min_step' and 'max_step'.
 
-def move(area, position, target_area=2500, target_position=(250, 250), step = 5.):
+    Returns the computed step (float).
+    """
+    step = error * factor
+    step = max(min_step, min(step, max_step))
+    return step
+
+def move(area, position, target_area, target_position):
     """
     Moves the object closer to 'target_position' in the image plane and
     adjusts its distance (via its observed 'area') to approach 'target_area'.
@@ -33,16 +45,24 @@ def move(area, position, target_area=2500, target_position=(250, 250), step = 5.
     Positive means giving rope; negative means taking rope.
     """
 
+    # TODO: fix naming of variables and comments to make sense
 
     # Default "no move" instruction
     tip_move = 0.
     left_move = 0.
     right_move = 0.
 
+    # Calculate differences
+    area_diff = abs(area - target_area)
+    diff_y    = abs(position[1] - target_position[1])  # referencing code that uses position[1] for "left-right"
+    diff_x    = abs(position[0] - target_position[0])  # referencing code that uses position[0] for "front-back"
+
     # 1) Check if the object is at the desired "size" (area). 
     #    - If area < target_area: object is too far => pull all ropes (negative).
     #    - If area > target_area: object is too close => give all ropes (positive).
     if abs(area - target_area) > area_tolerance:
+        step = dynamic_step(area_diff, min_step=1.0, max_step=20.0, factor=0.3)
+
         if area < target_area:
             # Pull from all motors
             tip_move   = -step
@@ -60,6 +80,7 @@ def move(area, position, target_area=2500, target_position=(250, 250), step = 5.
     #    - If current x > target x => object is too far right => 
     #      pull from left (negative) and let rope from right (positive).
     elif abs(position[1] - target_position[1]) > pos_tolerance:
+        step = dynamic_step(diff_y, min_step=1.0, max_step=15.0, factor=0.1)
         if position[1] < target_position[1]:
             # Move object to the right
             left_move  = -step
@@ -73,6 +94,7 @@ def move(area, position, target_area=2500, target_position=(250, 250), step = 5.
     #    - If y < target y => object is "above"/"up" => let rope from tip (positive).
     #    - If y > target y => object is "below"/"down" => pull rope from tip (negative).
     elif abs(position[0] - target_position[0]) > pos_tolerance:
+        step = dynamic_step(diff_x, min_step=1.0, max_step=15.0, factor=0.2)
         if position[0] < target_position[0]:
             # Let rope (object moves down)
             tip_move = -step
@@ -136,7 +158,7 @@ if __name__ == "__main__":
         # Convert the tuple to a string like (-5.0, 0.0, 5.0)
         f.write("")
 
-    positions = [(239, 222, 1200), (300, 222, 2000), (300, 180, 1200), (239, 180, 2000)]
+    positions = [(239, 222, 1500), (300, 222, 2000), (300, 180, 1500), (239, 180, 2000)]
     i = 0
     target_position = positions[0]
 

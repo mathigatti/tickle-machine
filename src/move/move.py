@@ -45,7 +45,7 @@ while True:
 
     if len(coord) > 0:
         send_to_arduino(str(coord).replace(" ", ""))
-        sleep(2)
+        sleep(7)
         with open("coords.txt", 'w') as f:
             f.write("")
             
