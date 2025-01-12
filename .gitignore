@@ -1,5 +1,5 @@
 .ipynb_checkpoints
-src/vision/Depth-Anything-V2/checkpoints
-src/vision/sam2_b.pt
+src/move/checkpoints
+src/move/sam2_b.pt
 src/move/coords.txt
 **/__pycache__

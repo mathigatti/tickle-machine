@@ -6,9 +6,6 @@ from PIL import Image
 import cv2
 import cv2.aruco as aruco
 
-from depth import depth_map
-from sam import sam
-
 # Define a helper to append a line to coords.txt
 def send_coord(coord):
     """
@@ -25,7 +22,7 @@ def coord_ready():
 
 # Tolerances (tweak to your needs).
 area_tolerance = 1500
-pos_tolerance = 100
+pos_tolerance = 50
 
 high_height = 8000
 low_height = 5500
@@ -181,16 +178,6 @@ def choose_random_non_black_points(mask, n=5, x_min=None, x_max=None):
     # np.argwhere returns (row, col) in (y, x) format
     non_black_coords = np.argwhere(mask_np != 0)  # shape: (N, 2)
 
-    # Filter by x-range if specified
-    # (non_black_coords[:,1] is the col = x)
-    if x_min is not None:
-        non_black_coords = non_black_coords[non_black_coords[:, 0] >= x_min]
-    if x_max is not None:
-        non_black_coords = non_black_coords[non_black_coords[:, 0] <= x_max]
-
-    non_black_coords = non_black_coords[non_black_coords[:, 1] <= 570]
-    non_black_coords = non_black_coords[non_black_coords[:, 1] >= 150]
-
     # Ensure there are enough non-black pixels in the valid x range
     if len(non_black_coords) < n:
         raise ValueError(
@@ -228,17 +215,17 @@ if __name__ == "__main__":
         f.write("")
 
     debug = True
+    
 
     ret, frame = cap.read()
     if debug:
         cv2.imwrite("captured_frame.jpg", frame)
-    frame_depth = depth_map(frame, debug=debug)
-    #frame_depth = cv2.cvtColor(frame_depth, cv2.COLOR_BGR2RGB)
-    image_pil = Image.fromarray(frame_depth)
-    frame_depth = sam(image_pil, debug=debug)
+
+    input("Waiting for you to load mask.jpg")
+    frame_depth = Image.open("mask.jpg").convert("L")  # Ensure the image is in grayscale
     
     positions = []
-    for position in choose_random_non_black_points(frame_depth, n=100, x_min=330, x_max=460):
+    for position in choose_random_non_black_points(frame_depth, n=100):
         positions.append(position+(high_height,))
         positions.append(position+(low_height,))
     positions.append((600, 320, 2500))
@@ -276,8 +263,3 @@ if __name__ == "__main__":
         else:
             sleep(1)
     cap.release()
-
-'''
-(656, 1184) 1.80487805
-130 cm ancho, 260 cm de largo
-'''
