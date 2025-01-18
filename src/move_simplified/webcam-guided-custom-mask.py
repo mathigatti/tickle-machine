@@ -24,8 +24,8 @@ def coord_ready():
 area_tolerance = 1500
 pos_tolerance = 50
 
-high_height = 8000
-low_height = 5500
+high_height = 7000
+low_height = 5000
 
 def dynamic_step(error, min_step=1.0, max_step=50.0, factor=0.1):
     """
@@ -176,22 +176,22 @@ def choose_random_non_black_points(mask, n=5, x_min=None, x_max=None):
 
     # Locate all pixels whose value is not zero (non-black)
     # np.argwhere returns (row, col) in (y, x) format
-    non_black_coords = np.argwhere(mask_np != 0)  # shape: (N, 2)
+    black_coords = np.argwhere(mask_np == 0)  # shape: (N, 2)
 
     # Ensure there are enough non-black pixels in the valid x range
-    if len(non_black_coords) < n:
+    if len(black_coords) < n:
         raise ValueError(
             f"Not enough non-black pixels in the specified x-range. "
-            f"Needed {n}, found {len(non_black_coords)}."
+            f"Needed {n}, found {len(black_coords)}."
         )
 
     # Randomly choose n distinct indices
-    chosen_indices = random.sample(range(len(non_black_coords)), k=n)
+    chosen_indices = random.sample(range(len(black_coords)), k=n)
 
     # For each chosen index, convert (row, col) => (x, y)
     chosen_points = []
     for idx in chosen_indices:
-        row, col = non_black_coords[idx]
+        row, col = black_coords[idx]
         chosen_points.append((col, row))  # (x=col, y=row)
 
     return chosen_points
